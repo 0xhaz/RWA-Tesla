@@ -201,6 +201,46 @@ contract dTSLA is ConfirmedOwner, FunctionsClient, ERC20, Pausable {
         return (calculatedNewTotalValue * COLLATERAL_RATIO) / COLLATERAL_PRECISION;
     }
 
+    function _mintFulFillRequest(bytes32 requestId, bytes memory response) internal {
+        uint256 amountOfTokensToMint = s_requestIdToRequest[requestId].amountOfToken;
+        s_portfolioBalance = uint256(bytes32(response));
+
+        if (_getCollateralRatioAdjustedTotalBalance(amountOfTokensToMint) > s_portfolioBalance) {
+            revert dTSLA__NotEnoughCollateral();
+        }
+
+        if (amountOfTokensToMint != 0) {
+            _mint(s_requestIdToRequest[requestId].requester, amountOfTokensToMint);
+        }
+    }
+
+    /**
+     * @notice the callback for the redeem request
+     * At this point, USDC should be in this contract, and we need to update the user
+     * That they can withdraw the USDC
+     *
+     * @param requestId The ID of the request to fulfill
+     * @param response The response from the request, it'll be the amount of USDC that was sent
+     */
+    function _redeemFulFillRequest(bytes32 requestId, bytes memory response) internal {
+        // This is going to have redemptionCoinDecimals decimals
+        uint256 usdcAmount = uint256(bytes32(response));
+        uint256 usdcAmountWad;
+        if (i_redemptionCoinDecimals < 18) {
+            usdcAmountWad = usdcAmount * (10 ** (18 - i_redemptionCoinDecimals));
+        }
+        if (usdcAmount == 0) {
+            // revert dTSLA__RedemptionFailed();
+            // Redemption Failed, we need to give them a refund of dTSLA
+            // This is a potential explout
+            uint256 amountOfdTSLABurned = s_requestIdToRequest[requestId].amountOfToken;
+            _mint(s_requestIdToRequest[requestId].requester, amountOfdTSLABurned);
+            return;
+        }
+
+        s_userToWithdrawalAmount[s_requestIdToRequest[requestId].requester] += usdcAmount;
+    }
+
     /*//////////////////////////////////////////////////////////////
                          VIEW / PURE FUNCTIONS
     //////////////////////////////////////////////////////////////*/
@@ -241,5 +281,21 @@ contract dTSLA is ConfirmedOwner, FunctionsClient, ERC20, Pausable {
      */
     function getUsdcValueOfUsd(uint256 usdAmount) public view returns (uint256) {
         return (usdAmount * PRECISION) / getUsdcPrice();
+    }
+
+    function getPortfolioBalance() public view returns (uint256) {
+        return s_portfolioBalance;
+    }
+
+    function getTotalUsdValue() public view returns (uint256) {
+        return (totalSupply() * getTslaPrice()) / PRECISION;
+    }
+
+    function getRequest(bytes32 requestId) public view returns (dTslaRequest memory) {
+        return s_requestIdToRequest[requestId];
+    }
+
+    function getWithdrawalAmount(address user) public view returns (uint256) {
+        return s_userToWithdrawalAmount[user];
     }
 }
