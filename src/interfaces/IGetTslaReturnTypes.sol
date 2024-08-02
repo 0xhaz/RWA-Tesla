@@ -8,5 +8,10 @@ interface IGetTslaReturnTypes {
         string redeemSource;
         address functionsRouter;
         bytes32 donId;
+        address tslaFeed;
+        address usdcFeed;
+        address redemptionCoin;
+        uint64 secretVersion;
+        uint8 secretSlot;
     }
 }

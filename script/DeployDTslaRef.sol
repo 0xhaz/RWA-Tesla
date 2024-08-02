@@ -1,19 +1,20 @@
-// SPDX-License-Identifier: SEE LICENSE IN LICENSE
-pragma solidity ^0.8.25;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
 
-import {Script, console2} from "forge-std/Script.sol";
-import {dTSLA} from "src/dTsla.sol";
-import {HelperConfig} from "script/HelperConfig.sol";
-import {IGetTslaReturnTypes} from "src/interfaces/IGetTslaReturnTypes.sol";
+import { Script } from "forge-std/Script.sol";
+import { HelperConfig } from "./HelperConfig.sol";
+import { dTSLA } from "../src/dTSLA.sol";
+import { IGetTslaReturnTypes } from "../src/interfaces/IGetTslaReturnTypes.sol";
 
 contract DeployDTsla is Script {
     string constant alpacaMintSource = "./functions/sources/alpacaBalance.js";
     string constant alpacaRedeemSource = "./functions/sources/alpacaBalance.js";
 
-    function run() public {
-        //    Get params
+    function run() external {
+        // Get params
         IGetTslaReturnTypes.GetTslaReturnType memory tslaReturnType = getdTslaRequirements();
 
+        // Actually deploy
         vm.startBroadcast();
         deployDTSLA(
             tslaReturnType.subId,
@@ -34,7 +35,7 @@ contract DeployDTsla is Script {
         HelperConfig helperConfig = new HelperConfig();
         (
             address tslaFeed,
-            address usdcFeed,
+            address usdcFeed, /*address ethFeed*/
             ,
             address functionsRouter,
             bytes32 donId,
@@ -51,7 +52,7 @@ contract DeployDTsla is Script {
             tslaFeed == address(0) || usdcFeed == address(0) || functionsRouter == address(0) || donId == bytes32(0)
                 || subId == 0
         ) {
-            revert("Missing network config");
+            revert("something is wrong");
         }
         string memory mintSource = vm.readFile(alpacaMintSource);
         string memory redeemSource = vm.readFile(alpacaRedeemSource);
@@ -80,7 +81,10 @@ contract DeployDTsla is Script {
         address redemptionCoin,
         uint64 secretVersion,
         uint8 secretSlot
-    ) public returns (dTSLA) {
+    )
+        public
+        returns (dTSLA)
+    {
         dTSLA dTsla = new dTSLA(
             subId,
             mintSource,

@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: SEE LICENSE IN LICENSE
-pragma solidity ^0.8.25;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.25;
 
 import {
     IFunctionsRouter,
@@ -15,7 +15,7 @@ contract MockFunctionsRouter is IFunctionsRouter {
     }
 
     /// @notice The identifier of the route to retrieve the address of the access control contract
-    /// The access control contract controls which accounts can manage subscription
+    /// The access control contract controls which accounts can manage subscriptions
     /// @return id - bytes32 id that can be passed to the "getContractById" of the Router
     function getAllowListId() external pure returns (bytes32) {
         return bytes32(0);
@@ -32,13 +32,13 @@ contract MockFunctionsRouter is IFunctionsRouter {
     }
 
     /// @notice Sends a request using the provided subscriptionId
-    /// @param subscriptionId - A unique subscription ID allocated by billing system
+    /// @param subscriptionId - A unique subscription ID allocated by billing system,
     /// a client can make requests from different contracts referencing the same subscription
     /// @param data - CBOR encoded Chainlink Functions request data, use FunctionsClient API to encode a request
     /// @param dataVersion - Gas limit for the fulfillment callback
     /// @param callbackGasLimit - Gas limit for the fulfillment callback
-    /// @param donId - An identifier used to determine which route to send the request to
-    /// @return requestId - A unique identifier for the request
+    /// @param donId - An identifier used to determine which route to send the request along
+    /// @return requestId - A unique request identifier
     function sendRequest(
         uint64 subscriptionId,
         bytes calldata data,
@@ -50,27 +50,27 @@ contract MockFunctionsRouter is IFunctionsRouter {
     }
 
     function sendRequestToProposed(
-        uint64, // subscriptionId
-        bytes calldata, // data
-        uint16, // dataVersion
-        uint32, // callbackGasLimit
-        bytes32 // donId
+        uint64, /*subscriptionId*/
+        bytes calldata, /*data*/
+        uint16, /*dataVersion*/
+        uint32, /*callbackGasLimit*/
+        bytes32 /*donId*/
     ) external pure returns (bytes32) {
         return bytes32(0);
     }
 
     function fulfill(
-        bytes memory, // response
-        bytes memory, // error
-        uint96, // juelsPerGas
-        uint96, // costWithoutFulfillment
-        address, // transmitter
-        FunctionsResponse.Commitment memory // commitment
+        bytes memory, /*response*/
+        bytes memory, /*err*/
+        uint96, /*juelsPerGas*/
+        uint96, /*costWithoutFulfillment*/
+        address, /*transmitter*/
+        FunctionsResponse.Commitment memory /*commitment*/
     ) external pure returns (FunctionsResponse.FulfillResult, uint96) {
         return (FunctionsResponse.FulfillResult.FULFILLED, uint96(0));
     }
 
-    /// @notice Validate requested gas limit is below the subscription max
+    /// @notice Validate requested gas limit is below the subscription max.
     /// @param subscriptionId subscription ID
     /// @param callbackGasLimit desired callback gas limit
     function isValidCallbackGasLimit(uint64 subscriptionId, uint32 callbackGasLimit) external view {}
@@ -87,26 +87,26 @@ contract MockFunctionsRouter is IFunctionsRouter {
         return address(0);
     }
 
-    /// @notice Return the latest proposal set
-    /// @return ids the identifiers of the contracts to update
-    /// @return to the addresses of the contracts that will be updated to
+    /// @notice Return the latest proprosal set
+    /// @return ids The identifiers of the contracts to update
+    /// @return to The addresses of the contracts that will be updated to
     function getProposedContractSet() external pure returns (bytes32[] memory, address[] memory) {
         return (new bytes32[](0), new address[](0));
     }
 
-    /// @notice Proposes one or more updates to the contract routers
-    /// @dev Only callable by the owner
+    /// @notice Proposes one or more updates to the contract routes
+    /// @dev Only callable by owner
     function proposeContractsUpdate(bytes32[] memory proposalSetIds, address[] memory proposalSetAddresses) external {}
 
     /// @notice Updates the current contract routes to the proposed contracts
-    /// @dev Only callable by the owner
+    /// @dev Only callable by owner
     function updateContracts() external {}
 
-    /// @notice Puts the system into an emergency stopped state
-    /// @dev Only callable by the owner
+    /// @dev Puts the system into an emergency stopped state.
+    /// @dev Only callable by owner
     function pause() external {}
 
-    // @notice Takes the system out of an emergency stopped state
-    // @dev Only callable by the owner
+    /// @dev Takes the system out of an emergency stopped state.
+    /// @dev Only callable by owner
     function unpause() external {}
 }

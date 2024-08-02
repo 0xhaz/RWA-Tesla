@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: SEE LICENSE IN LICENSE
-pragma solidity ^0.8.25;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.25;
 
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/dev/v1_0_0/FunctionsClient.sol";
 import {ConfirmedOwner} from "@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol";
@@ -8,12 +8,11 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {OracleLib, AggregatorV3Interface} from "./libraries/OracleLib.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-import {console2} from "forge-std/console2.sol";
 
 /**
  * @title dTSLA
- * @notice This is our contract to make request to the Alpaca API to mint TSLA-backed dTSLA tokens
- * @dev This contract is meant for testing purposes only
+ * @notice This is our contract to make requests to the Alpaca API to mint TSLA-backed dTSLA tokens
+ * @dev This contract is meant to be for educational purposes only
  */
 contract dTSLA is FunctionsClient, ConfirmedOwner, ERC20, Pausable {
     using FunctionsRequest for FunctionsRequest.Request;
@@ -80,7 +79,7 @@ contract dTSLA is FunctionsClient, ConfirmedOwner, ERC20, Pausable {
     event Response(bytes32 indexed requestId, uint256 character, bytes response, bytes err);
 
     /*//////////////////////////////////////////////////////////////
-                                 FUNCTIONS
+                               FUNCTIONS
     //////////////////////////////////////////////////////////////*/
     /**
      * @notice Initializes the contract with the Chainlink router address and sets the contract owner
@@ -121,7 +120,7 @@ contract dTSLA is FunctionsClient, ConfirmedOwner, ERC20, Pausable {
 
     /**
      * @notice Sends an HTTP request for character information
-     * @dev If you pass 0, that will act as a way to get an updated portfolio balance
+     * @dev If you pass 0, that will act just as a way to get an updated portfolio balance
      * @return requestId The ID of the request
      */
     function sendMintRequest(uint256 amountOfTokensToMint)
@@ -144,15 +143,16 @@ contract dTSLA is FunctionsClient, ConfirmedOwner, ERC20, Pausable {
         return requestId;
     }
 
-    /**
+    /*
      * @notice user sends a Chainlink Functions request to sell TSLA for redemptionCoin
-     * @notice this will put the redemptionCoin in a withdrawal queue that the user must call to redeem
+     * @notice this will put the redemptionCoin in a withdrawl queue that the user must call to redeem
+     * 
      * @dev Burn dTSLA
      * @dev Sell TSLA on brokerage
      * @dev Buy USDC on brokerage
      * @dev Send USDC to this contract for user to withdraw
-     *
-     * @param amountdTsla The amount of dTSLA to redeem
+     * 
+     * @param amountdTsla - the amount of dTSLA to redeem
      */
     function sendRedeemRequest(uint256 amountdTsla) external whenNotPaused returns (bytes32 requestId) {
         // Should be able to just always redeem?
@@ -219,7 +219,7 @@ contract dTSLA is FunctionsClient, ConfirmedOwner, ERC20, Pausable {
     }
 
     /*//////////////////////////////////////////////////////////////
-                         INTERNAL 
+                                INTERNAL
     //////////////////////////////////////////////////////////////*/
     function _mintFulFillRequest(bytes32 requestId, bytes memory response) internal {
         uint256 amountOfTokensToMint = s_requestIdToRequest[requestId].amountOfToken;
@@ -232,15 +232,16 @@ contract dTSLA is FunctionsClient, ConfirmedOwner, ERC20, Pausable {
         if (amountOfTokensToMint != 0) {
             _mint(s_requestIdToRequest[requestId].requester, amountOfTokensToMint);
         }
+        // Do we need to return anything?
     }
 
     /*
      * @notice the callback for the redeem request
      * At this point, USDC should be in this contract, and we need to update the user
      * That they can now withdraw their USDC
-     *
-     * @param requestId The ID of the request to fulfill
-     * @param response The response from the request, it'll be the amount of USDC that was sent
+     * 
+     * @param requestId - the requestId that was fulfilled
+     * @param response - the response from the request, it'll be the amount of USDC that was sent
      */
     function _redeemFulFillRequest(bytes32 requestId, bytes memory response) internal {
         // This is going to have redemptioncoindecimals decimals
@@ -260,12 +261,6 @@ contract dTSLA is FunctionsClient, ConfirmedOwner, ERC20, Pausable {
 
         s_userToWithdrawalAmount[s_requestIdToRequest[requestId].requester] += usdcAmount;
     }
-    /**
-     * @notice Adjusts the total balance of the portfolio to account for the collateral ratio
-     * @param amountOfTokensToMint The number of tokens to mint
-     * @return The adjusted total balance of the portfolio
-     * @dev This function is used to check if the portfolio has enough collateral to mint new tokens
-     */
 
     function _getCollateralRatioAdjustedTotalBalance(uint256 amountOfTokensToMint) internal view returns (uint256) {
         uint256 calculatedNewTotalValue = getCalculatedNewTotalValue(amountOfTokensToMint);
@@ -273,7 +268,7 @@ contract dTSLA is FunctionsClient, ConfirmedOwner, ERC20, Pausable {
     }
 
     /*//////////////////////////////////////////////////////////////
-                         VIEW AND PURE 
+                             VIEW AND PURE
     //////////////////////////////////////////////////////////////*/
     function getPortfolioBalance() public view returns (uint256) {
         return s_portfolioBalance;
@@ -296,10 +291,10 @@ contract dTSLA is FunctionsClient, ConfirmedOwner, ERC20, Pausable {
         return (tslaAmount * getTslaPrice()) / PRECISION;
     }
 
-    /*
+    /* 
      * Pass the USD amount with 18 decimals (WAD)
      * Return the redemptionCoin amount with 18 decimals (WAD)
-     *
+     * 
      * @param usdAmount - the amount of USD to convert to USDC in WAD
      * @return the amount of redemptionCoin with 18 decimals (WAD)
      */
@@ -310,12 +305,6 @@ contract dTSLA is FunctionsClient, ConfirmedOwner, ERC20, Pausable {
     function getTotalUsdValue() public view returns (uint256) {
         return (totalSupply() * getTslaPrice()) / PRECISION;
     }
-    /**
-     * @notice Calculates the new total value of the portfolio after minting new tokens
-     * @param addedNumberOfTsla The number of TSLA tokens to mint
-     * @return The new total value of the portfolio
-     * @dev This function is used to check if the portfolio has enough collateral to mint new tokens
-     */
 
     function getCalculatedNewTotalValue(uint256 addedNumberOfTsla) public view returns (uint256) {
         return ((totalSupply() + addedNumberOfTsla) * getTslaPrice()) / PRECISION;
