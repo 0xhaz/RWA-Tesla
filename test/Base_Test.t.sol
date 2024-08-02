@@ -67,4 +67,29 @@ abstract contract Base_Test is Test {
         );
         assert(dtsla.getPortfolioBalance() == STARTING_PORTFOLIO_BALANCE);
     }
+
+    modifier balanceInitialized() {
+        uint256 amountToRequest = 0;
+
+        vm.prank(dtsla.owner());
+        bytes32 requestId = dtsla.sendMintRequest(amountToRequest);
+
+        mockFunctionsRouter.handleOracleFulfillment(
+            address(dtsla), requestId, abi.encodePacked(STARTING_PORTFOLIO_BALANCE), hex""
+        );
+        _;
+    }
+
+    function test_CanMintAfter_PortfolioBalanceIsSet() public balanceInitialized {
+        uint256 amountToRequest = 1e18;
+
+        vm.prank(dtsla.owner());
+        bytes32 requestId = dtsla.sendMintRequest(amountToRequest);
+
+        mockFunctionsRouter.handleOracleFulfillment(
+            address(dtsla), requestId, abi.encodePacked(STARTING_PORTFOLIO_BALANCE), hex""
+        );
+
+        assert(dtsla.totalSupply() == amountToRequest);
+    }
 }
