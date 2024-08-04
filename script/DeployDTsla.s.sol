@@ -55,6 +55,7 @@ contract DeployDTsla is Script {
         }
         string memory mintSource = vm.readFile(alpacaMintSource);
         string memory redeemSource = vm.readFile(alpacaRedeemSource);
+        console2.log("mintSource", mintSource);
         return IGetTslaReturnTypes.GetTslaReturnType(
             subId,
             mintSource,
